@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Caption Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f2f2f2;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="file"] {
+            margin: 10px 0;
+        }
+        button {
+            padding: 10px 20px;
+            border: none;
+            background-color: #007BFF;
+            color: white;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .captions {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .captions p {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>Image Caption Generator</h1>
+    <form id="upload-form">
+        <input type="file" id="image-input" accept="image/*" required><br>
+        <button type="submit">Generate Caption</button>
+    </form>
+    <div id="image-preview"></div>
+    <div class="captions" id="captions-container"></div>
+</div>
+
+<script>
+    const form = document.getElementById('upload-form');
+    const imageInput = document.getElementById('image-input');
+    const imagePreview = document.getElementById('image-preview');
+    const captionsContainer = document.getElementById('captions-container');
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const file = imageInput.files[0];
+        if (!file) return;
+
+        // Preview image
+        const reader = new FileReader();
+        reader.onload = () => {
+            imagePreview.innerHTML = `<img src="${reader.result}" alt="Uploaded Image">`;
+        };
+        reader.readAsDataURL(file);
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        captionsContainer.innerHTML = '<p>Generating caption...</p>';
+
+        try {
+            const response = await fetch('/caption', {
+                method: 'POST',
+                body: formData
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                captionsContainer.innerHTML = `<p><strong>Model Used:</strong> ${result.model_used}</p>`;
+                result.captions.forEach((caption, idx) => {
+                    captionsContainer.innerHTML += `<p><strong>Caption ${idx + 1}:</strong> ${caption}</p>`;
+                });
+            } else {
+                captionsContainer.innerHTML = `<p style="color:red;">Error: ${result.error}</p>`;
+            }
+        } catch (error) {
+            captionsContainer.innerHTML = `<p style="color:red;">Error: ${error.message}</p>`;
+        }
+    });
+</script>
+</body>
+</html>
